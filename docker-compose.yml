@@ -1,0 +1,56 @@
+version: '3'
+services:
+  djangolibrary:
+    build: .
+    container_name: djangolibrary
+    volumes:
+      - .:/code
+      - static_volume:/opt/services/djangolibrary/static/
+      - media_volume:/opt/services/djangolibrary/media/
+
+    networks:
+      - nginx_network
+      - postgres_network
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:1.13
+    ports:
+      - 8000:80
+    volumes:
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+      - static_volume:/opt/services/djangolibrary/static/
+      - media_volume:/opt/services/djangolibrary/media/
+    depends_on:
+      - djangolibrary
+    networks:
+      - nginx_network
+
+
+  db:
+    container_name: db
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=${SQL_USER}
+      - POSTGRES_PASSWORD=${SQL_PASSWORD}
+      - POSTGRES_DB=${SQL_DATABASE}
+    networks:
+      - postgres_network
+
+
+networks:
+    nginx_network:
+        driver: bridge
+    postgres_network:
+        driver: bridge
+
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
